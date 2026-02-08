@@ -1,5 +1,47 @@
 import { useForm } from "react-hook-form";
 import { DevTool } from "@hookform/devtools";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+const formSchema = z.object({
+    name: z
+      .string()
+      .min(3, "Minimum length should be 3")
+      .max(20, "Maximum length should be 20"),
+
+    dob: z
+      .string()
+      .nonempty("Date of birth is required")
+      .refine((date) => {
+        const today = new Date();
+        const birthDate = new Date(date);
+
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const m = today.getMonth() - birthDate.getMonth();
+
+        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+          age--;
+        }
+
+        return age >= 10 && age <= 80;
+      }, "Age must be between 10 and 80"),
+
+    email: z
+      .string()
+      .nonempty("Email is required")
+      .email("Invalid email address"),
+
+    password: z
+      .string()
+      .min(6, "Password must be at least 6 characters"),
+
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
+
 
 function Formzod() {
   const { register, handleSubmit, control, formState } = useForm({
@@ -9,6 +51,7 @@ function Formzod() {
     //   password: "123456"
     // },
 
+    resolver: zodResolver(formSchema)
   });
 
   const { errors } = formState;
